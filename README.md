@@ -171,7 +171,7 @@ The selected Random Forest model was then evaluated on the held-out validation s
 
 ### Confusion Matrix
 
-![Confusion Matrix](results/confision_matrix.png)
+![Confusion Matrix](results/confusion_matrix.png)
 
 ### ROC Curve
 
@@ -228,6 +228,27 @@ The final results of the project were:
 
 The difference between cross-validation and validation performance also shows why evaluating the final model on data that was not used during tuning is important.
 
+## How to Run
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/pinarMadadi/titanic-survival-prediction.git
+cd titanic-survival-prediction
+```
+
+2. Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+3. Run the pipeline:
+
+```bash
+python main.py
+```
+
 ## Technologies Used
 
 * Python
@@ -244,7 +265,7 @@ The difference between cross-validation and validation performance also shows wh
 ```text
 titanic-survival-prediction/
 │
-├── titanic_v2.py
+├── main.py
 ├── requirements.txt
 ├── README.md
 │
@@ -263,3 +284,9 @@ This project gave me practical experience with a complete machine learning workf
 One of the main findings was the importance of features such as **Sex, Pclass, Age, and passenger title** when predicting survival.
 
 The project also showed that a higher cross-validation score does not necessarily guarantee the same performance on a separate validation set.
+
+## Author
+
+**Pinar**
+
+This project was developed as part of a hands-on Machine Learning learning portfolio.
