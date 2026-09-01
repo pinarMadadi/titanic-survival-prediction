@@ -18,6 +18,7 @@ from sklearn.inspection import DecisionBoundaryDisplay
 from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
 from sklearn.metrics import accuracy_score, classification_report, ConfusionMatrixDisplay, RocCurveDisplay
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.metrics import roc_auc_score
 import warnings
 warnings.filterwarnings("ignore")
 import os
@@ -164,20 +165,12 @@ class GroupSizeTransformer(BaseEstimator, TransformerMixin):
 
     def transform(self, X):
         X = X.copy()
-
-        X["group_size"] = (
-            X["Ticket"]
-            .map(self.ticket_counts_)
-            .fillna(1)
-        )
-
+        X["group_size"] = (X["Ticket"].map(self.ticket_counts_).fillna(1))
         X["fare_per_person"] = X["Fare"] / X["group_size"]
-
         return X
 
 
 # Custom transformer for leakage-safe imputation.
-
 # Imputation statistics are learned separately within each training fold
 # when used inside cross-validation.
 
@@ -253,11 +246,7 @@ def Evaluate_feature_set(num_features, cat_features, X, y, cv=5):
                     max_iter=10000, random_state=42))
     ])
 
-    score = cross_val_score(
-        current_svm, X, y,
-        cv=cv, scoring="accuracy"
-    )
-
+    score = cross_val_score(current_svm, X , y , cv=cv , scoring="accuracy")
     return score.mean(), score.std()
 
 # FORWARD ABLATION STUDY
@@ -567,7 +556,6 @@ print(classification_report(
     target_names=["Died", "Survived"]
 ))
 
-
 # CONFUSION MATRIX
 
 fig, ax = plt.subplots(figsize=(6, 5))
@@ -593,7 +581,7 @@ plt.tight_layout()
 plt.savefig("results/roc_curve.png", dpi=300, bbox_inches="tight")
 plt.show()
 
-from sklearn.metrics import roc_auc_score
+# ROC-AUC SCORE
 y_val_proba = selected_model.predict_proba(X_val)[:, 1]
 val_auc = roc_auc_score(y_val, y_val_proba)
 print(f"Validation ROC-AUC: {val_auc:.4f}")
@@ -601,33 +589,22 @@ print(f"Validation ROC-AUC: {val_auc:.4f}")
 # FEATURE IMPORTANCE
 
 if selected_model_name in ["Random Forest", "XGBoost", "Decision Tree"]:
-
     model_step = selected_model.steps[-1][0]
     importances = selected_model[model_step].feature_importances_
-
     fitted_preprocessor = selected_model.named_steps["preprocessor"]
     feature_names = fitted_preprocessor.get_feature_names_out()
-
     clean_feature_importance = [
         name.split("__")[-1] for name in feature_names
     ]
-
     feature_name_df = pd.DataFrame({
         "Feature": clean_feature_importance,
         "Importance": importances
     }).sort_values("Importance", ascending=False)
-
     print(f"\nFeature Importance for {selected_model_name}:")
     print(feature_name_df.head(10))
 
-    sns.barplot(
-        x=feature_name_df["Importance"],
-        y=feature_name_df["Feature"],
-        hue=feature_name_df["Feature"],
-        palette="Blues_r",
-        legend=False
-    )
-
+    sns.barplot(x=feature_name_df["Importance"],y=feature_name_df["Feature"],
+                hue=feature_name_df["Feature"],palette="Blues_r",legend=False)
     plt.title(f"Feature Importance in {selected_model_name}")
     plt.xlabel("Importance")
     plt.ylabel("Feature")
@@ -652,8 +629,7 @@ ensemble_model = VotingClassifier(
         ("svm", tuned_models["SVM"]),
         ("random_forest", tuned_models["Random Forest"]),
         ("logistic", tuned_models["Logistic Regression"])
-    ],
-    voting="soft"
+        ],voting="soft"
     )
 
 ensemble_model.fit(X_train, y_train)
@@ -675,16 +651,10 @@ def SHAP(s_model, model_name):
     # 3. Extract clean feature names after preprocessing
     fitted_column_trans = s_model.named_steps["preprocessor"]
     raw_feature_names = fitted_column_trans.get_feature_names_out()
-
-    clean_feature_names = [
-        col.split("__")[-1] for col in raw_feature_names
-    ]
+    clean_feature_names = [col.split("__")[-1] for col in raw_feature_names]
 
     # Convert processed data to DataFrame for readable SHAP plots
-    X_val_processed_df = pd.DataFrame(
-        X_val_transformed,
-        columns=clean_feature_names
-    )
+    X_val_processed_df = pd.DataFrame(X_val_transformed,columns=clean_feature_names)
 
     # 4. Select the appropriate SHAP explainer
     if model_name in ["Random Forest", "Decision Tree", "XGBoost"]:
@@ -692,28 +662,13 @@ def SHAP(s_model, model_name):
         shap_values = explainer(X_val_processed_df)
 
     elif model_name == "Logistic Regression":
-        explainer = shap.LinearExplainer(
-            classifier_model,
-            X_val_processed_df
-        )
+        explainer = shap.LinearExplainer(classifier_model,X_val_processed_df)
         shap_values = explainer(X_val_processed_df)
 
     elif model_name in ["SVM", "KNN"]:
-        background_data = shap.sample(
-            X_val_processed_df,
-            50,
-            random_state=42
-        )
-
-        explainer = shap.KernelExplainer(
-            classifier_model.predict_proba,
-            background_data
-        )
-
-        shap_values = explainer(
-            X_val_processed_df,
-            silent=True
-        )
+        background_data = shap.sample(X_val_processed_df,50,random_state=42)
+        explainer = shap.KernelExplainer(classifier_model.predict_proba,background_data)
+        shap_values = explainer(X_val_processed_df,silent=True)
 
     else:
         print(f"SHAP analysis is not available for {model_name}.")
@@ -727,42 +682,18 @@ def SHAP(s_model, model_name):
 
     # 6. SHAP Summary Beeswarm Plot
     plt.figure(figsize=(10, 8))
-
-    shap.summary_plot(
-        shap_values_survived,
-        X_val_processed_df,
-        show=False
-    )
-
-    plt.title(
-        f"SHAP Summary Plot ({model_name})",
-        fontsize=14,
-        fontweight="bold"
-    )
-
+    shap.summary_plot(shap_values_survived,X_val_processed_df,show=False)
+    plt.title(f"SHAP Summary Plot ({model_name})",fontsize=14,fontweight="bold")
     plt.tight_layout()
     plt.savefig("results/shap_summary.png", dpi=300, bbox_inches="tight")
     plt.show()
 
     # 7. SHAP Feature Importance Bar Plot
     plt.figure(figsize=(10, 6))
-
-    shap.summary_plot(
-        shap_values_survived,
-        X_val_processed_df,
-        plot_type="bar",
-        show=False
-    )
-
-    plt.title(
-        f"SHAP Feature Importance Bar Plot ({model_name})",
-        fontsize=14,
-        fontweight="bold"
-    )
-
+    shap.summary_plot(shap_values_survived,X_val_processed_df,plot_type="bar",show=False)
+    plt.title(f"SHAP Feature Importance Bar Plot ({model_name})",fontsize=14,fontweight="bold")
     plt.tight_layout()
     plt.show()
-
 
 # Run SHAP only for the selected final model
 SHAP(selected_model, selected_model_name)
