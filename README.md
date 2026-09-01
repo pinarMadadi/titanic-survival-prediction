@@ -1,5 +1,5 @@
 # Titanic Survival Prediction
-
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1U5LTSbUdJQxhTfY-qKbr7jsjN7Pj8E6w?usp=sharing)
 A machine learning project for predicting passenger survival on the Titanic dataset.
 
 In this project, I explored the dataset, created new features, handled missing values, compared several classification models, tuned their hyperparameters, and used SHAP to better understand the model's predictions.
